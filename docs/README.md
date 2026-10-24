@@ -64,11 +64,12 @@ python -m src.services.CameraCalibrator
 |------|---------|
 | `src/images/stereo/left/NNN.png`, `src/images/stereo/right/NNN.png` | Saved stereo pairs (same file name in both folders) |
 | `src/images/monocular/NNN.png` | Saved monocular frames |
-| `src/matricies/stereo/stereo_calib.npz` | Stereo calibration result |
-| `src/matricies/monocular/monocular_calib.npz` | Monocular calibration result |
+| `src/matrices/stereo/stereo_calib.npz` | Stereo calibration result |
+| `src/matrices/monocular/monocular_calib.npz` | Monocular calibration result |
 
 Image folders are created automatically and `*.png` / `*.jpg` are git-ignored. The
-`.npz` files are **tracked in git** (see [P15](docs/problems/P15-tracked-artifacts-and-machine-specific-config.md)).
+`.npz` files are also git-ignored (`src/matrices/**/*.npz`, see
+[P15](docs/problems/P15-tracked-artifacts-and-machine-specific-config.md)).
 File contents are documented in [docs/calibration-output.md](docs/calibration-output.md).
 
 ## Reading the result
@@ -91,7 +92,7 @@ src/
   interfaces/              ICamera, ICalibrator (zope.interface contracts)
   helpers/                 CalibrationHelper (OpenCV wrappers shared by both modes)
   utils/                   Configurator (YAML access), Dispatcher (picks the calibrator)
-  matricies/               Calibration results (sic: spelling, see P16)
+  matrices/               Calibration results
   tests/                   Hardware-dependent scripts (see docs/testing.md)
 ```
 

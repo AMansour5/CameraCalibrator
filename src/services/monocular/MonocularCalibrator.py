@@ -35,7 +35,7 @@ class MonocularCalibrator:
     def __setupSaveDirectories(self):
         project_root = Configurator.getProjectRoot()
         self.IMAGES_DIR = os.path.join(project_root, "src", "images", "monocular")
-        self.MATRICES_DIR = os.path.join(project_root, "src", "matricies", "monocular")
+        self.MATRICES_DIR = os.path.join(project_root, "src", "matrices", "monocular")
         os.makedirs(self.IMAGES_DIR, exist_ok=True)
         os.makedirs(self.MATRICES_DIR, exist_ok=True)
 

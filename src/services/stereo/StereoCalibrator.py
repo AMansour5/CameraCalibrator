@@ -38,7 +38,7 @@ class StereoCalibrator:
     def __setupSaveDirectories(self):
         self.IMAGES_LEFT_DIR = os.path.join(self.project_root, "src", "images", "stereo", "left")
         self.IMAGES_RIGHT_DIR = os.path.join(self.project_root, "src", "images", "stereo", "right")
-        self.MATRICES_DIR = os.path.join(self.project_root, "src", "matricies", "stereo")
+        self.MATRICES_DIR = os.path.join(self.project_root, "src", "matrices", "stereo")
         os.makedirs(self.IMAGES_LEFT_DIR, exist_ok=True)
         os.makedirs(self.IMAGES_RIGHT_DIR, exist_ok=True)
         os.makedirs(self.MATRICES_DIR, exist_ok=True)

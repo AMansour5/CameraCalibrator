@@ -5,10 +5,15 @@
 ## What the repository does
 
 - `.gitignore` ignores `*.png`, `*.jpg`, `__pycache__/`, `*.pyc` and `.vscode/`, but **not** `*.npz`. Both result files
-  are committed: `src/matricies/stereo/stereo_calib.npz` and `src/matricies/monocular/monocular_calib.npz`.
+  are committed: `src/matrices/stereo/stereo_calib.npz` and `src/matrices/monocular/monocular_calib.npz`.
 - They belong to the author's cameras (the stereo file: 1920 x 1080 per eye, baseline 119.4 mm).
 - `config/stereo_camera.yaml` uses `camera_index: /dev/video2` and `config/monocular_camera.yaml` uses `/dev/video0`:
   Linux paths for the author's current USB layout.
+
+**Status:** the `.npz`-tracking half is resolved in the working tree: `src/matrices/**/*.npz` is now in
+`.gitignore` and the two previously committed files are removed, as part of finishing the `matricies` →
+`matrices` rename ([P16](P16-dead-code-copied-code-and-naming.md)). The machine-specific `config/*.yaml`
+defaults below are still open.
 
 ## Effects
 
@@ -21,7 +26,7 @@
 
 ## Suggested fix
 
-- Add `src/matricies/**/*.npz` to `.gitignore` and run `git rm --cached` on the two files. If a sample is useful, keep it in
-  `examples/` with a note that it is not yours.
+- ~~Add `src/matrices/**/*.npz` to `.gitignore` and run `git rm --cached` on the two files.~~ **Done.** If a
+  sample is useful, keep it in `examples/` with a note that it is not yours.
 - Ship `config/*.example.yaml` (copy to `*.yaml` locally), or use generic defaults (`camera_index: 0`).
 - On Linux a stable name such as `/dev/v4l/by-id/<your-camera>` survives re-plugging.

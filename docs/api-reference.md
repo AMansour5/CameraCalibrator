@@ -18,7 +18,7 @@ only prints `An error occurred: ...` ([P06](problems/P06-errors-printed-not-rais
 |--------|-------------|
 | `getCalibrator()` *(static)* | Reads `chosen_calibrator`; returns `StereoCalibrator()` for `stereo`, `MonocularCalibrator()` for `monocular`, else raises `ValueError` |
 
-## `src.utils.Configurator.Configurator(pkg=None)`
+## `src.utils.Configurator.Configurator()`
 
 Constants: `CHECKERBOARD`, `STEREO_CAMERA`, `MONOCULAR_CAMERA`, `CALIBRATOR`.
 
@@ -26,10 +26,7 @@ Constants: `CHECKERBOARD`, `STEREO_CAMERA`, `MONOCULAR_CAMERA`, `CALIBRATOR`.
 |--------|-------------|
 | `getProjectRoot()` *(static)* | Walks up from the file until a directory containing both `config/` and `src/` is found; raises `FileNotFoundError` otherwise |
 | `fetchData(data_type)` | Returns the parsed YAML as a dict. **On a missing file, bad YAML or unknown type it prints a message and returns `None`** |
-| `setConfig(data_type, new_data)` | Merges `new_data` into the YAML file and rewrites it. Not used anywhere in the project |
-| `getConfigsNames()` | Returns the constant values. Not used anywhere |
-
-`pkg` (when set) redirects to `src/<pkg>/config`; no such folders exist and nothing passes it.
+| `setConfig(data_type, new_data)` | Merges `new_data` into the YAML file and rewrites it. Not called anywhere in the project; covered by `src/tests/test_configurator_set_config.py` |
 
 ## `src.interfaces`
 

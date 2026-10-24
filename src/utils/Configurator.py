@@ -7,9 +7,8 @@ class Configurator():
     MONOCULAR_CAMERA = "monocular_camera"
     CALIBRATOR = "calibrator"
     
-    def __init__(self, pkg: str = None):
+    def __init__(self):
         self.__configFile = ''
-        self.__pkg = pkg
     
     @staticmethod
     def getProjectRoot():
@@ -22,34 +21,24 @@ class Configurator():
 
     def __getConfigDir(self):
         project_root = Configurator.getProjectRoot()
-        if self.__pkg is None:
-            return f"{project_root}/config"
-        return f"{project_root}/src/{self.__pkg}/config"
+        return f"{project_root}/config"
+    
     def __raiseTypeError(self,data_type):
         consts = [attr for attr in dir(self) if not callable(getattr(self, attr)) and not attr.startswith("_")]
         raise TypeError(f"Config file of type {data_type} doesn't exist, only {', '.join(consts)} are allowed.")
-    
-    def getConfigsNames(self):
-        consts = [attr for attr in dir(self) if not callable(getattr(self, attr)) and not attr.startswith("_")]
-        return [getattr(self, attr) for attr in consts]
 
     def __getYamlFile(self, data_type):
         config_dir = self.__getConfigDir()
-        config_filename = None
-        
-        if data_type == Configurator.CHECKERBOARD:
-            config_filename = Configurator.CHECKERBOARD
-        elif data_type == Configurator.STEREO_CAMERA:
-            config_filename = Configurator.STEREO_CAMERA
-        elif data_type == Configurator.MONOCULAR_CAMERA:
-            config_filename = Configurator.MONOCULAR_CAMERA
-        elif data_type == Configurator.CALIBRATOR:
-            config_filename = Configurator.CALIBRATOR
-        else:
+        supported_types = (
+            Configurator.CHECKERBOARD,
+            Configurator.STEREO_CAMERA,
+            Configurator.MONOCULAR_CAMERA,
+            Configurator.CALIBRATOR,
+        )
+        if data_type not in supported_types:
             self.__raiseTypeError(data_type)
-        
-        if config_filename:
-            self.__configFile = f"{config_dir}/{config_filename}.yaml"
+        self.__configFile = f"{config_dir}/{data_type}.yaml"
+
     def fetchData(self,data_type):
         try:
             self.__getYamlFile(data_type)
@@ -62,12 +51,13 @@ class Configurator():
             print("Error: Failed to parse the YAML file.")
         except TypeError as e:
             print(e)
+
     def setConfig(self, data_type, new_data):
         """
         Update the YAML configuration file with new_data.
         Only updates the keys provided in new_data and keeps other keys intact.
 
-        :param data_type: Type of configuration (e.g., "cameras", "joystick_buttons")
+        :param data_type: Type of configuration (e.g., "checkerboard", "calibrator")
         :param new_data: Dictionary containing the new key-value pairs to update.
         """
         try:

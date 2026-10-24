@@ -5,40 +5,40 @@ import numpy as np
 class CalibrationHelper:
     @staticmethod
     def buildObjectPoints(CHECKERBOARD, SQUARE_SIZE_MM):
-            """3D coordinates of checkerboard corners in the board's own frame,
-            Z=0 since the board is planar. Scaled to real-world mm."""
-            objp = np.zeros((CHECKERBOARD[0] * CHECKERBOARD[1], 3), np.float32)
-            objp[:, :2] = np.mgrid[0:CHECKERBOARD[0], 0:CHECKERBOARD[1]].T.reshape(-1, 2)
-            objp *= SQUARE_SIZE_MM
-            return objp
+        """3D coordinates of checkerboard corners in the board's own frame,
+        Z=0 since the board is planar. Scaled to real-world mm."""
+        objp = np.zeros((CHECKERBOARD[0] * CHECKERBOARD[1], 3), np.float32)
+        objp[:, :2] = np.mgrid[0:CHECKERBOARD[0], 0:CHECKERBOARD[1]].T.reshape(-1, 2)
+        objp *= SQUARE_SIZE_MM
+        return objp
         
     @staticmethod
     def findCorners(image_paths, objp, CHECKERBOARD, SUBPIX_CRITERIA):
-            """Detect + subpixel-refine checkerboard corners across a set of images.
-            Returns matched object points, image points, and image size."""
-            objpoints = []
-            imgpoints = []
-            img_size = None
-            used_files = []
-        
-            for path in image_paths:
-                img = cv2.imread(path)
-                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-                img_size = gray.shape[::-1]  # (width, height)
-        
-                found, corners = cv2.findChessboardCorners(gray, CHECKERBOARD)
-                if not found:
-                    print(f"  [skip] no checkerboard found in {os.path.basename(path)}")
-                    continue
-                
-                corners_refined = cv2.cornerSubPix(
-                    gray, corners, (11, 11), (-1, -1), SUBPIX_CRITERIA
-                )
-                objpoints.append(objp)
-                imgpoints.append(corners_refined)
-                used_files.append(path)
-        
-            return objpoints, imgpoints, img_size, used_files
+        """Detect + subpixel-refine checkerboard corners across a set of images.
+        Returns matched object points, image points, and image size."""
+        objpoints = []
+        imgpoints = []
+        img_size = None
+        used_files = []
+    
+        for path in image_paths:
+            img = cv2.imread(path)
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            img_size = gray.shape[::-1]  # (width, height)
+    
+            found, corners = cv2.findChessboardCorners(gray, CHECKERBOARD)
+            if not found:
+                print(f"  [skip] no checkerboard found in {os.path.basename(path)}")
+                continue
+            
+            corners_refined = cv2.cornerSubPix(
+                gray, corners, (11, 11), (-1, -1), SUBPIX_CRITERIA
+            )
+            objpoints.append(objp)
+            imgpoints.append(corners_refined)
+            used_files.append(path)
+    
+        return objpoints, imgpoints, img_size, used_files
     
     @staticmethod
     def calibrateSingle(objpoints, imgpoints, img_size, label, CALIB_CRITERIA):

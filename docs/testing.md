@@ -10,6 +10,7 @@
 | `src/tests/MonocularCalibratorTest.py` | Constructs the calibrator, grabs a frame, runs a real calibration | Same as above (`test_initialization` does assert the camera opened) |
 | `src/tests/DispatcherTest.py` | Builds the configured calibrator and checks it is not `None` | Opened as a side effect; the test still passes without one |
 | `src/tests/ConfiguratorTest.py` | Loads configs | No |
+| `src/tests/test_configurator_set_config.py` | Pytest-collectible regression test for `Configurator.setConfig` (file creation + key-preserving merge), using a temporary project root | No |
 
 Run any of them from the repository root as a module, for example:
 
@@ -21,7 +22,9 @@ python -m src.tests.StereoCameraTest
 
 These are scripts you run and look at, not an automated suite:
 
-- `pytest` collects **0 tests** (files are not named `test_*.py`, and `ConfiguratorTest` has an `__init__`).
+- `pytest` collects **0 tests** from the `*Test.py` files (they are not named `test_*.py`, and
+  `ConfiguratorTest` has an `__init__`). `src/tests/test_configurator_set_config.py` is the
+  exception: it follows the `test_*.py` convention, so `pytest` does collect and run it.
 - `ConfiguratorTest` refers to `Configurator.CAMERA` and the key `cam_index`, neither of
   which exists, and wraps everything in `try/except`, so it prints the error and still
   reports "All tests completed." with exit code 0.
@@ -92,6 +95,6 @@ StereoCamera.getFrames = lambda self: current["pair"]
 
 Then construct `StereoCalibrator()`, call `saveImage((left, right))` for several rendered
 poses, and call `calibrate()`. Two cautions: the calibrator writes to the real
-`src/images/` and `src/matricies/` folders (point `Configurator.getProjectRoot` at a
+`src/images/` and `src/matrices/` folders (point `Configurator.getProjectRoot` at a
 temporary copy of the project to avoid clobbering your data), and calibration at full
 1080p resolution is slow, so reduce the frame size for logic tests.

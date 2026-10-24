@@ -33,7 +33,7 @@ mismatched-pairs run in [P02](P02-calibration-overwrites-saved-result-without-qu
 **Point 3.** With `fx` about 1066 px and 30 mm squares, corner spacing in the image is about 32 px at 1.0 m,
 22.8 px at 1.4 m and 16 px at 2.0 m, against a 23 px window. Beyond roughly 1.4 m the window spans neighbouring corners.
 
-**The committed stereo calibration** (`src/matricies/stereo/stereo_calib.npz`, see [calibration-output.md](../calibration-output.md)) shows several signs
+**The committed stereo calibration** (`src/matrices/stereo/stereo_calib.npz`, see [calibration-output.md](../calibration-output.md)) shows several signs
 that the intrinsics may be poorly constrained. These are observations; the cause cannot be proven from the file alone:
 
 | Observation | Value |

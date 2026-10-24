@@ -50,7 +50,7 @@ Made a mistake? `x` deletes the last-numbered saved image (the one at index *sav
 Press `c`. The console prints how many images were usable, per-camera RMS error, then
 the stereo RMS, the baseline (`|T|`, in mm) and the rotation `R`. During this time the
 window does not update ([P12](problems/P12-calibration-blocks-the-ui-loop.md)). The result
-is written to `src/matricies/<mode>/<mode>_calib.npz`, **replacing any previous result**
+is written to `src/matrices/<mode>/<mode>_calib.npz`, **replacing any previous result**
 ([P02](problems/P02-calibration-overwrites-saved-result-without-quality-gate.md)).
 
 ### 4. Check it

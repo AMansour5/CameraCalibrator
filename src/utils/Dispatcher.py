@@ -7,7 +7,7 @@ class Dispatcher:
     @staticmethod
     def getCalibrator():
         configurator = Configurator()
-        calibrator_cfg = configurator.fetchData(Configurator().CALIBRATOR)
+        calibrator_cfg = configurator.fetchData(configurator.CALIBRATOR)
         chosen_calibrator = calibrator_cfg.get("chosen_calibrator", None)
         if chosen_calibrator == "stereo":
             return StereoCalibrator()

@@ -7,7 +7,7 @@ All lengths that depend on the board (`T`, the baseline) are in **millimetres**,
 the object points are built from `square_size_mm`. Image sizes are `(width, height)` in
 pixels; for stereo this is the size of **one eye**, not the combined frame.
 
-## `src/matricies/stereo/stereo_calib.npz`
+## `src/matrices/stereo/stereo_calib.npz`
 
 | Key | Shape | Meaning |
 |-----|-------|---------|
@@ -30,7 +30,7 @@ date produced the file ([P10](problems/P10-calibration-file-schema-misleading-an
 ```python
 import cv2, numpy as np
 
-d = np.load("src/matricies/stereo/stereo_calib.npz")
+d = np.load("src/matrices/stereo/stereo_calib.npz")
 K1, D1, K2, D2, R, T = (d[k] for k in ("K1", "D1", "K2", "D2", "R", "T"))
 size = tuple(int(v) for v in d["img_size"])            # (width, height) of ONE eye
 
@@ -68,7 +68,7 @@ Forcing both principal points to the image centre drops the `alpha=0` zoom from 
 with `K1`'s `fx` instead of the rectified `f` would be about 40% off. See
 [P13](problems/P13-no-calibration-quality-diagnostics-or-safeguards.md).
 
-## `src/matricies/monocular/monocular_calib.npz`
+## `src/matrices/monocular/monocular_calib.npz`
 
 | Key | Shape | Meaning |
 |-----|-------|---------|
@@ -90,7 +90,7 @@ The preview builds a new camera matrix with `alpha=0` (crop to valid pixels) tha
 **not** saved, so reproduce it:
 
 ```python
-d = np.load("src/matricies/monocular/monocular_calib.npz")
+d = np.load("src/matrices/monocular/monocular_calib.npz")
 K, D = d["K"], d["D"]
 size = tuple(int(v) for v in d["img_size"])
 new_K, _ = cv2.getOptimalNewCameraMatrix(K, D, size, alpha=0)

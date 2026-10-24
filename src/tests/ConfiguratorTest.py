@@ -7,8 +7,8 @@ class TestConfigurator:
 
     def test_load_camera_config(self):
         try:
-            config = self.configurator.fetchData(Configurator.CAMERA)
-            assert config["cam_index"] == "/dev/video2"
+            config = self.configurator.fetchData(Configurator.STEREO_CAMERA)
+            assert config["camera_index"] == "/dev/video2"
             assert config["combined_width"] == 3840
             assert config["combined_height"] == 1080
             assert config["preview_width"] == 640

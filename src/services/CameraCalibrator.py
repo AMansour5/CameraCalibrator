@@ -38,6 +38,8 @@ class CameraCalibrator:
                     preview_mode = False
                 elif not preview_mode and key == ord("s") and found:
                     calibrator.saveImage(raw_data)
+                elif key == ord("a"):
+                    calibrator.acceptLatest()
                 elif not preview_mode and key == ord("c"):
                     calibrator.calibrate()
                 elif not preview_mode and key == ord("x"):

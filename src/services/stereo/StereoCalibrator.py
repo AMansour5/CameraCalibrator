@@ -11,9 +11,11 @@ from src.helpers.CalibrationHelper import CalibrationHelper
 @implementer(ICalibrator)
 class StereoCalibrator:
 
-    def __init__(self):
+    def __init__(self, min_images=10, max_rms=1.0):
         self.configurator = Configurator()
         self.project_root = Configurator.getProjectRoot()
+        self.min_images = min_images
+        self.max_rms = max_rms
         self.camera_cfg = self.configurator.fetchData(Configurator.STEREO_CAMERA)
         self.camera = StereoCamera(self.camera_cfg)
         self.checkerboard_cfg = self.configurator.fetchData(Configurator.CHECKERBOARD)
@@ -33,16 +35,29 @@ class StereoCalibrator:
         self.image_index = CalibrationHelper.getStartIndex([self.IMAGES_LEFT_DIR, self.IMAGES_RIGHT_DIR])
         self._dirty = False
         self._rectify_maps = None
-        print(f"Saved pairs: {self.saved_count}. Starting from pair index {self.image_index}. s:save c:calibrate x:delete last q:quit p:preview calibration")
+        self._maps_source = None
+        print(f"Saved pairs: {self.saved_count}. Starting from pair index {self.image_index}. s:save c:calibrate a:accept x:delete last q:quit p:preview calibration")
         self.__setupCamera()
     
     def __setupSaveDirectories(self):
         self.IMAGES_LEFT_DIR = os.path.join(self.project_root, "src", "images", "stereo", "left")
         self.IMAGES_RIGHT_DIR = os.path.join(self.project_root, "src", "images", "stereo", "right")
         self.MATRICES_DIR = os.path.join(self.project_root, "src", "matrices", "stereo")
+        self.TIMESTAMPED_DIR = os.path.join(self.MATRICES_DIR, "time_stamped")
         os.makedirs(self.IMAGES_LEFT_DIR, exist_ok=True)
         os.makedirs(self.IMAGES_RIGHT_DIR, exist_ok=True)
         os.makedirs(self.MATRICES_DIR, exist_ok=True)
+        os.makedirs(self.TIMESTAMPED_DIR, exist_ok=True)
+
+    def acceptLatest(self):
+        """Promote the latest time-stamped calibration to the final file."""
+        latest = CalibrationHelper.latestTimestamped(self.TIMESTAMPED_DIR)
+        if latest is None:
+            print("No time-stamped calibration to accept. Press 'c' to calibrate first.")
+            return False
+        CalibrationHelper.acceptCalibration(latest, self.OUTPUT_FILE)
+        print(f"Accepted {os.path.basename(latest)} -> {self.OUTPUT_FILE}")
+        return True
 
     def __setupCamera(self):
         try:
@@ -79,7 +94,7 @@ class StereoCalibrator:
             status_text = "READY" if both_found else "board not found in both halves"
             combined_preview = cv2.hconcat([disp_l, disp_r])
             cv2.putText(
-                combined_preview, f"{status_text} | saved:{self.saved_count} | s:save c:calibrate x:delete q:quit",
+                combined_preview, f"{status_text} | saved:{self.saved_count} | s:save c:calibrate a:accept x:delete q:quit",
                 (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, status_color, 2,
             )
             return combined_preview, both_found, (left_frame, right_frame)
@@ -120,7 +135,8 @@ class StereoCalibrator:
 
     def previewFrame(self):
         """Grab one pair and apply the saved rectification; returns a display frame or None."""
-        if not os.path.exists(self.OUTPUT_FILE):
+        latest = CalibrationHelper.latestTimestamped(self.TIMESTAMPED_DIR)
+        if latest is None:
             print("No calibration data found yet. Press 'c' to calibrate first.")
             return None
         try:
@@ -129,12 +145,13 @@ class StereoCalibrator:
                 print("Failed to capture frames.")
                 return None
 
-            if self._rectify_maps is None:
-                data = np.load(self.OUTPUT_FILE)
+            if self._rectify_maps is None or self._maps_source != latest:
+                data = np.load(latest)
                 img_size = (left_frame.shape[1], left_frame.shape[0])
                 self._rectify_maps = CalibrationHelper.buildStereoRectifyMaps(
                     data["K1"], data["D1"], data["K2"], data["D2"], data["R"], data["T"], img_size
                 )
+                self._maps_source = latest
 
             map1x, map1y, map2x, map2y = self._rectify_maps
             rect_left = cv2.remap(left_frame, map1x, map1y, cv2.INTER_LINEAR)
@@ -143,7 +160,7 @@ class StereoCalibrator:
             disp_r = self.camera.resize_for_preview(rect_right)
             combined = cv2.hconcat([disp_l, disp_r])
             cv2.putText(
-                combined, "CALIBRATED PREVIEW | r:return q:quit",
+                combined, "LATEST CALIBRATION PREVIEW | a:accept r:return q:quit",
                 (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2,
             )
             return combined
@@ -206,8 +223,11 @@ class StereoCalibrator:
             self.__printCalibrationResults(K1, D1, K2, D2, R, T, rms_left, rms_right, rms_stereo)
 
             # Save calibration results to file
-            np.savez(self.OUTPUT_FILE, K1=K1, D1=D1, K2=K2, D2=D2, R=R, T=T, img_size=img_size_left, rms_stereo=rms_stereo)
-            print(f"Calibration results saved to {self.OUTPUT_FILE}")
+            saved_path = CalibrationHelper.saveTimestamped(
+                self.TIMESTAMPED_DIR, "stereo_calib",
+                K1=K1, D1=D1, K2=K2, D2=D2, R=R, T=T, img_size=img_size_left, rms_stereo=rms_stereo,
+            )
+            print(f"Calibration results saved to {saved_path}. Press 'a' to accept as the final calibration.")
             self._dirty = False
             self._rectify_maps = None
             

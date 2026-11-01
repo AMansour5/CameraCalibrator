@@ -11,6 +11,7 @@
 | `src/tests/DispatcherTest.py` | Builds the configured calibrator and checks it is not `None` | Opened as a side effect; the test still passes without one |
 | `src/tests/ConfiguratorTest.py` | Loads configs | No |
 | `src/tests/test_configurator_set_config.py` | Pytest-collectible regression test for `Configurator.setConfig` (file creation + key-preserving merge), using a temporary project root | No |
+| `src/tests/test_timestamped_calibration.py` | Pytest tests for time-stamped saves, accept (`a`) and preview source | No |
 
 Run any of them from the repository root as a module, for example:
 

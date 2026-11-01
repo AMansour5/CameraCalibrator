@@ -1,2 +1,4 @@
 # Choose the type of calibrator to use: monocular or stereo
-chosen_calibrator: stereo
+chosen_calibrator: monocular
+min_images: 10
+max_rms: 1.0

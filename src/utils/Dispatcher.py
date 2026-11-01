@@ -10,8 +10,8 @@ class Dispatcher:
         calibrator_cfg = configurator.fetchData(configurator.CALIBRATOR)
         chosen_calibrator = calibrator_cfg.get("chosen_calibrator", None)
         if chosen_calibrator == "stereo":
-            return StereoCalibrator()
+            return StereoCalibrator(min_images=calibrator_cfg.get("min_images", 10), max_rms=calibrator_cfg.get("max_rms", 1.0))
         elif chosen_calibrator == "monocular":
-            return MonocularCalibrator()
+            return MonocularCalibrator(min_images=calibrator_cfg.get("min_images", 10), max_rms=calibrator_cfg.get("max_rms", 1.0))
         else:
             raise ValueError(f"Unknown calibrator type: {chosen_calibrator}")

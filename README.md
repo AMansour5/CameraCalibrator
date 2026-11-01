@@ -66,6 +66,7 @@ python -m src.services.CameraCalibrator
 | `src/images/monocular/NNN.png` | Saved monocular frames |
 | `src/matrices/stereo/stereo_calib.npz` | Stereo calibration result |
 | `src/matrices/monocular/monocular_calib.npz` | Monocular calibration result |
+| `src/matrices/<mode>/time_stamped/*.npz` | Every calibration run; `a` copies the latest to the final file above |
 
 Image folders are created automatically and `*.png` / `*.jpg` are git-ignored. The
 `.npz` files are also git-ignored (`src/matrices/**/*.npz`, see

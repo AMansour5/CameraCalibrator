@@ -23,4 +23,7 @@ class ICalibrator(Interface):
         """Grab frame(s), apply the saved calibration, and return a display frame (or None if unavailable)."""
 
     def calibrate():
-        """Perform the calibration process using the captured images. This method should compute the camera parameters and return them."""
+        """Perform the calibration process using the captured images and save it as a new time-stamped result (the final file is not touched)."""
+
+    def acceptLatest():
+        """Copy the latest time-stamped calibration over the final calibration file; return True on success."""

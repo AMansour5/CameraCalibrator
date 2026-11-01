@@ -1,4 +1,6 @@
 import os
+import shutil
+from datetime import datetime
 import cv2
 import numpy as np
 
@@ -61,6 +63,34 @@ class CalibrationHelper:
                 os.remove(path)
                 deleted_any = True
         return deleted_any
+
+    @staticmethod
+    def saveTimestamped(directory, prefix, **arrays):
+        """Save arrays as <prefix>_YYYYMMDD_HHMMSS.npz (never overwrites); returns the path."""
+        os.makedirs(directory, exist_ok=True)
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        path = os.path.join(directory, f"{prefix}_{stamp}.npz")
+        n = 1
+        while os.path.exists(path):
+            path = os.path.join(directory, f"{prefix}_{stamp}_{n:02d}.npz")
+            n += 1
+        np.savez(path, **arrays)
+        return path
+
+    @staticmethod
+    def latestTimestamped(directory):
+        """Newest time-stamped .npz in directory (by name), or None."""
+        if not os.path.isdir(directory):
+            return None
+        files = sorted(f for f in os.listdir(directory) if f.endswith(".npz"))
+        return os.path.join(directory, files[-1]) if files else None
+
+    @staticmethod
+    def acceptCalibration(src, dst):
+        """Atomically copy src over dst."""
+        tmp = dst + ".tmp"
+        shutil.copyfile(src, tmp)
+        os.replace(tmp, dst)
 
     @staticmethod
     def buildUndistortMaps(K, D, img_size):

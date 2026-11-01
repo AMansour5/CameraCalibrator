@@ -47,10 +47,13 @@ Made a mistake? `x` deletes the last-numbered saved image (the one at index *sav
 
 ### 3. Calibrate
 
-Press `c`. The console prints how many images were usable, per-camera RMS error, then
+Press `c` (or `q` when there are unsaved images). The console prints how many images were usable, per-camera RMS error, then
 the stereo RMS, the baseline (`|T|`, in mm) and the rotation `R`. During this time the
 window does not update ([P12](problems/P12-calibration-blocks-the-ui-loop.md)). The result
-is written to `src/matrices/<mode>/<mode>_calib.npz`, **replacing any previous result**
+is written to a new file `src/matrices/<mode>/time_stamped/<mode>_calib_YYYYMMDD_HHMMSS.npz`;
+the final `<mode>_calib.npz` is **not** changed. Press `a` to accept the latest time-stamped
+result: it is copied over `src/matrices/<mode>/<mode>_calib.npz`. Preview (`p`) always shows
+the latest time-stamped result, accepted or not. Time-stamped files are never deleted automatically
 ([P02](problems/P02-calibration-overwrites-saved-result-without-quality-gate.md)).
 
 ### 4. Check it

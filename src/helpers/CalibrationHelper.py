@@ -76,3 +76,10 @@ class CalibrationHelper:
         map1x, map1y = cv2.initUndistortRectifyMap(K1, D1, R1, P1, img_size, cv2.CV_32FC1)
         map2x, map2y = cv2.initUndistortRectifyMap(K2, D2, R2, P2, img_size, cv2.CV_32FC1)
         return map1x, map1y, map2x, map2y
+
+    @staticmethod
+    def getStartIndex(dirs):
+        used = [int(f[:-4]) for d in dirs for f in os.listdir(d)
+            if f.endswith(".png") and f[:-4].isdigit()]
+        return max(used, default=-1) + 1
+    

@@ -27,9 +27,10 @@ class MonocularCalibrator:
         self.__setupSaveDirectories()
         self.OUTPUT_FILE = os.path.join(self.MATRICES_DIR, "monocular_calib.npz")
         self.saved_count = len([f for f in os.listdir(self.IMAGES_DIR) if f.endswith(".png")])
+        self.image_index = CalibrationHelper.getStartIndex([self.IMAGES_DIR])
         self._dirty = False
         self._undistort_maps = None
-        print(f"Starting from image index {self.saved_count}. s:save c:calibrate x:delete last q:quit p:preview calibration")
+        print(f"Saved images: {self.saved_count}. Starting from image index {self.image_index}. s:save c:calibrate x:delete last q:quit p:preview calibration")
         self.__setupCamera()
     
     def __setupSaveDirectories(self):
@@ -76,10 +77,11 @@ class MonocularCalibrator:
 
     def saveImage(self, raw_frame):
         """Persist the given frame as the next calibration image."""
-        name = f"{self.saved_count:03d}.png"
+        name = f"{self.image_index:03d}.png"
         cv2.imwrite(os.path.join(self.IMAGES_DIR, name), raw_frame)
         print(f"Saved image {name}")
         self.saved_count += 1
+        self.image_index += 1
         self._dirty = True
 
     def deleteLastImage(self):
@@ -87,8 +89,9 @@ class MonocularCalibrator:
             print("No images to delete.")
             return
         self.saved_count -= 1
-        if CalibrationHelper.deleteLastSaved([self.IMAGES_DIR], self.saved_count):
-            print(f"Deleted image {self.saved_count:03d}.png")
+        self.image_index -= 1
+        if CalibrationHelper.deleteLastSaved([self.IMAGES_DIR], self.image_index):
+            print(f"Deleted image {self.image_index:03d}.png")
         else:
             print("No image file found to delete.")
 

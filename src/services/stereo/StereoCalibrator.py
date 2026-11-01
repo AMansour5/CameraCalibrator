@@ -30,9 +30,10 @@ class StereoCalibrator:
         self.__setupSaveDirectories()
         self.OUTPUT_FILE = os.path.join(self.MATRICES_DIR, "stereo_calib.npz")
         self.saved_count = len([f for f in os.listdir(self.IMAGES_LEFT_DIR) if f.endswith(".png")])
+        self.image_index = CalibrationHelper.getStartIndex([self.IMAGES_LEFT_DIR, self.IMAGES_RIGHT_DIR])
         self._dirty = False
         self._rectify_maps = None
-        print(f"Starting from pair index {self.saved_count}. s:save c:calibrate x:delete last q:quit p:preview calibration")
+        print(f"Saved pairs: {self.saved_count}. Starting from pair index {self.image_index}. s:save c:calibrate x:delete last q:quit p:preview calibration")
         self.__setupCamera()
     
     def __setupSaveDirectories(self):
@@ -89,11 +90,12 @@ class StereoCalibrator:
     def saveImage(self, raw_data):
         """Persist the given left/right pair as the next calibration images."""
         left_frame, right_frame = raw_data
-        name = f"{self.saved_count:03d}.png"
+        name = f"{self.image_index:03d}.png"
         cv2.imwrite(os.path.join(self.IMAGES_LEFT_DIR, name), left_frame)
         cv2.imwrite(os.path.join(self.IMAGES_RIGHT_DIR, name), right_frame)
         print(f"Saved pair {name}")
         self.saved_count += 1
+        self.image_index += 1
         self._dirty = True
 
     def deleteLastImage(self):
@@ -101,8 +103,9 @@ class StereoCalibrator:
             print("No images to delete.")
             return
         self.saved_count -= 1
-        if CalibrationHelper.deleteLastSaved([self.IMAGES_LEFT_DIR, self.IMAGES_RIGHT_DIR], self.saved_count):
-            print(f"Deleted pair {self.saved_count:03d}.png")
+        self.image_index -= 1
+        if CalibrationHelper.deleteLastSaved([self.IMAGES_LEFT_DIR, self.IMAGES_RIGHT_DIR], self.image_index):
+            print(f"Deleted pair {self.image_index:03d}.png")
         else:
             print("No image files found to delete.")
 

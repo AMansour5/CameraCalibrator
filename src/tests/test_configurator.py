@@ -1,10 +1,19 @@
-"""Hardware-free regression tests for Configurator.setConfig.
-
-Run from the repository root: python -m pytest -q src/tests/test_configurator_set_config.py
-"""
 import yaml
 from src.utils.Configurator import Configurator
 
+def test_load_camera_config():
+    configurator = Configurator()
+    config = configurator.fetchData(Configurator.STEREO_CAMERA)
+    assert config["camera_index"] == "/dev/video2"
+    assert config["combined_width"] == 3840
+    assert config["combined_height"] == 1080
+    assert config["preview_width"] == 640
+
+def test_load_checkerboard_config():
+    configurator = Configurator()
+    config = configurator.fetchData(Configurator.CHECKERBOARD)
+    assert config["columns"] == 8
+    assert config["rows"] == 5
 
 def _point_project_root_at(monkeypatch, project_root):
     monkeypatch.setattr(Configurator, "getProjectRoot", lambda: str(project_root))

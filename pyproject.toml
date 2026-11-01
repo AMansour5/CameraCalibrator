@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "camera-calibrator"
+version = "0.1.0"
+description = "Interactive checkerboard calibration for monocular and side-by-side stereo cameras, built on OpenCV"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "Ahmed Mansour" }]
+keywords = ["camera calibration", "stereo vision", "opencv", "computer vision"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Image Processing",
+]
+
+dependencies = [
+    "opencv-python>=4.12,<5",
+    "numpy>=1.26",
+    "PyYAML>=6.0.1",
+    "zope.interface>=6.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+calibrate-camera = "src.services.CameraCalibrator:CameraCalibrator.calibrate"
+
+[project.urls]
+Homepage = "https://github.com/AMansour5/CameraCalibrator"
+
+# The code imports itself as `src.*` (for example `from src.utils.Dispatcher import ...`),
+# so the package to ship is `src`. The tests are hardware scripts and are left out.
+[tool.setuptools.packages.find]
+include = ["src*"]
+exclude = ["src.tests*"]

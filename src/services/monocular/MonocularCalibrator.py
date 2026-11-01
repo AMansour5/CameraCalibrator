@@ -6,7 +6,9 @@ from zope.interface import implementer
 from src.utils.Configurator import Configurator
 from src.interfaces.ICalibrator import ICalibrator
 from src.helpers.CalibrationHelper import CalibrationHelper
+from src.exceptions.CameraSetupError import CameraSetupError
 from src.services.monocular.MonocularCamera import MonocularCamera
+from src.exceptions.CameraCalibrationError import CameraCalibrationError
 
 @implementer(ICalibrator)
 class MonocularCalibrator:
@@ -62,8 +64,7 @@ class MonocularCalibrator:
             if frame is None:
                 raise RuntimeError("Failed to capture initial frame from the monocular camera.")
         except Exception as e:
-            print(f"Error opening camera: {e}")
-            self.camera = None
+            raise CameraSetupError(f"Failed to open monocular camera: {e}")
 
     def grabPreviewFrame(self):
         """Grab + annotate one frame; returns (display_frame, found, raw_frame)."""
@@ -118,7 +119,8 @@ class MonocularCalibrator:
         return "Monocular capture"
 
     def release(self):
-        self.camera.release()
+        if self.camera is not None:
+            self.camera.release()
 
     def previewFrame(self):
         """Grab one frame and apply the saved undistortion; returns a display frame or None."""
@@ -190,7 +192,7 @@ class MonocularCalibrator:
             self._dirty = False
             self._undistort_maps = None
         except Exception as e:
-            print(f"Error during calibration: {e}")
+            raise CameraCalibrationError(f"Error during calibration: {e}")
 
     def __printCalibrationResults(self, K, D, rms):
         print("=== Monocular calibration result ===")

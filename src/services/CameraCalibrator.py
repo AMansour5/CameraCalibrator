@@ -1,4 +1,6 @@
 import cv2
+import sys
+import traceback
 from src.utils.Dispatcher import Dispatcher
 """
 An orchestral class that manages calibration of cameras 
@@ -53,3 +55,5 @@ if __name__ == "__main__":
         CameraCalibrator.calibrate()
     except Exception as e:
         print(f"An error occurred: {e}")
+        traceback.print_exc()
+        sys.exit(1)

@@ -18,8 +18,7 @@ class StereoCamera:
                 raise RuntimeError(f"Could not open camera index {self.camera_index}")
             self.__setupCamera()
         except Exception as e:
-            print(f"Error opening camera: {e}")
-            self.__capture = None
+            raise RuntimeError(f"Failed to open stereo camera: {e}")
 
     def __setupCamera(self):
         try:

@@ -7,6 +7,8 @@ from src.utils.Configurator import Configurator
 from src.interfaces.ICalibrator import ICalibrator
 from src.services.stereo.StereoCamera import StereoCamera
 from src.helpers.CalibrationHelper import CalibrationHelper
+from src.exceptions.CameraSetupError import CameraSetupError
+from src.exceptions.CameraCalibrationError import CameraCalibrationError
 
 @implementer(ICalibrator)
 class StereoCalibrator:
@@ -66,8 +68,7 @@ class StereoCalibrator:
             if left_frame is None or right_frame is None:
                 raise RuntimeError("Failed to capture initial frames from the stereo camera.")
         except Exception as e:
-            print(f"Error opening camera: {e}")
-            self.camera = None
+            raise CameraSetupError(f"Failed to open stereo camera: {e}")
 
     def grabPreviewFrame(self):
         """Grab + annotate one pair; returns (display_frame, found, raw_pair)."""
@@ -171,7 +172,6 @@ class StereoCalibrator:
 
     def calibrate(self):
         """Perform the calibration process using the captured images."""
-        # Implement the calibration logic here
         try:
             objp = CalibrationHelper.buildObjectPoints(self.CHECKERBOARD, self.SQUARE_SIZE_MM)
             left_paths = sorted(glob.glob(os.path.join(self.IMAGES_LEFT_DIR, "*.png")))
@@ -233,7 +233,7 @@ class StereoCalibrator:
             self._rectify_maps = None
             
         except Exception as e:
-            print(f"Error during calibration: {e}")
+            raise CameraCalibrationError(f"Error during calibration: {e}")
 
     def __stereoCalibrate(self, objpoints, imgpoints_left, imgpoints_right, K1, D1, K2, D2, img_size):
         rms_stereo, K1, D1, K2, D2, R, T, E, F = cv2.stereoCalibrate(

@@ -120,6 +120,7 @@ class StereoCalibrator:
         self.saved_count -= 1
         self.image_index -= 1
         if CalibrationHelper.deleteLastSaved([self.IMAGES_LEFT_DIR, self.IMAGES_RIGHT_DIR], self.image_index):
+            self._dirty = True
             print(f"Deleted pair {self.image_index:03d}.png")
         else:
             print("No image files found to delete.")

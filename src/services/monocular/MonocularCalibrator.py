@@ -106,6 +106,7 @@ class MonocularCalibrator:
         self.saved_count -= 1
         self.image_index -= 1
         if CalibrationHelper.deleteLastSaved([self.IMAGES_DIR], self.image_index):
+            self._dirty = True
             print(f"Deleted image {self.image_index:03d}.png")
         else:
             print("No image file found to delete.")

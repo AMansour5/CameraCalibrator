@@ -191,7 +191,7 @@ class MonocularCalibrator:
             # Save the calibration matrices
             saved_path = CalibrationHelper.saveTimestamped(
                 self.TIMESTAMPED_DIR, "monocular_calib",
-                K=K, D=D, R=rvecs, T=tvecs, img_size=img_size, rms=rms,
+                K=K, D=D, rvecs=rvecs, tvecs=tvecs, img_size=img_size, rms=rms, checkerboard=self.CHECKERBOARD, square_size_mm=self.SQUARE_SIZE_MM
             )
             print(f"Calibration matrices saved to {saved_path}. Press 'a' to accept as the final calibration.")
             self._dirty = False

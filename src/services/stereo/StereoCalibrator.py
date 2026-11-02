@@ -221,17 +221,17 @@ class StereoCalibrator:
                 objpoints_right, imgpoints_right, img_size_right, "RIGHT", self.CALIB_CRITERIA)
 
             # Perform stereo calibration
-            K1, D1, K2, D2, R, T, rms_stereo = self.__stereoCalibrate(
+            K1, D1, K2, D2, R, T, E, F, rms_stereo = self.__stereoCalibrate(
                 objpoints_left, imgpoints_left, imgpoints_right, K1, D1, K2, D2, img_size_left
             )
 
             # print calibration results
-            self.__printCalibrationResults(K1, D1, K2, D2, R, T, rms_left, rms_right, rms_stereo)
+            self.__printCalibrationResults(K1, D1, K2, D2, R, T, E, F, rms_left, rms_right, rms_stereo)
 
             # Save calibration results to file
             saved_path = CalibrationHelper.saveTimestamped(
                 self.TIMESTAMPED_DIR, "stereo_calib",
-                K1=K1, D1=D1, K2=K2, D2=D2, R=R, T=T, img_size=img_size_left, rms_stereo=rms_stereo,
+                K1=K1, D1=D1, K2=K2, D2=D2, R=R, T=T, E=E, F=F, img_size=img_size_left, rms_left=rms_left, rms_right=rms_right, rms_stereo=rms_stereo, checkerboard=self.CHECKERBOARD, square_size_mm=self.SQUARE_SIZE_MM
             )
             print(f"Calibration results saved to {saved_path}. Press 'a' to accept as the final calibration.")
             self._dirty = False
@@ -248,7 +248,7 @@ class StereoCalibrator:
             flags=self.STEREO_FLAGS,
         )
         print(f"[stereo] stereo calibration RMS reprojection error: {rms_stereo:.4f} px")
-        return K1, D1, K2, D2, R, T, rms_stereo
+        return K1, D1, K2, D2, R, T, E, F, rms_stereo
 
     def __filterByCommon(self, paths, objpoints, imgpoints, common):
         obj_out, img_out = [], []
@@ -258,7 +258,7 @@ class StereoCalibrator:
                 img_out.append(i)
         return obj_out, img_out
 
-    def __printCalibrationResults(self, K1, D1, K2, D2, R, T, rms_left, rms_right, rms_stereo):
+    def __printCalibrationResults(self, K1, D1, K2, D2, R, T, E, F, rms_left, rms_right, rms_stereo):
         baseline_mm = np.linalg.norm(T)
         print("=== Stereo calibration result ===")
         print(f"Stereo RMS reprojection error: {rms_stereo:.4f} px")
@@ -267,6 +267,8 @@ class StereoCalibrator:
         print(f"Translation between cameras (T, mm):\n{T.ravel()}")
         print(f"Left camera RMS reprojection error: {rms_left:.4f} px")
         print(f"Right camera RMS reprojection error: {rms_right:.4f} px")
+        print(f"Essential matrix (E):\n{E}")
+        print(f"Fundamental matrix (F):\n{F}")
 
         if rms_stereo > 1.0:
             print(

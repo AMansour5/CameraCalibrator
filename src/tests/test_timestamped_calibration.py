@@ -48,8 +48,8 @@ def test_accept_latest_and_preview_use_timestamped(tmp_path, monkeypatch):
     assert not (tmp_path / "src" / "matrices" / "monocular" / "monocular_calib.npz").exists()
 
     K = np.array([[10.0, 0, 10], [0, 10, 10], [0, 0, 1]])
-    older = CalibrationHelper.saveTimestamped(cal.TIMESTAMPED_DIR, "monocular_calib", K=K, D=np.zeros(5))
-    newer = CalibrationHelper.saveTimestamped(cal.TIMESTAMPED_DIR, "monocular_calib", K=K * 1.0, D=np.zeros(5))
+    older = CalibrationHelper.saveTimestamped(cal.TIMESTAMPED_DIR, "monocular_calib", K=K, D=np.zeros(5), img_size=(20, 20))
+    newer = CalibrationHelper.saveTimestamped(cal.TIMESTAMPED_DIR, "monocular_calib", K=K * 1.0, D=np.zeros(5), img_size=(20, 20))
 
     assert cal.previewFrame() is not None
     assert cal._maps_source == newer

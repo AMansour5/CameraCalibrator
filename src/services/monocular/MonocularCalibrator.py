@@ -185,6 +185,10 @@ class MonocularCalibrator:
                 objpoints, imgpoints, img_size, "Monocular Camera", self.CALIB_CRITERIA
             )
 
+            CalibrationHelper.perViewErrors(
+                objpoints, imgpoints, rvecs, tvecs, K, D, used_files, "Monocular Camera"
+            )
+
             # Print calibration results
             self.__printCalibrationResults(K, D, rms)
 

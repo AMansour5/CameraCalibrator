@@ -70,3 +70,12 @@ def perViewErrors(objpoints, imgpoints, rvecs, tvecs, K, D):
 - Reserve a few pairs and report the error on them.
 - Try `cv2.CALIB_FIX_K3` and/or `cv2.CALIB_FIX_PRINCIPAL_POINT` and compare the rectified result; capture more strongly tilted views and
   views near the frame edges (see [usage.md](../usage.md)).
+
+## Resolution (point 1)
+
+`CalibrationHelper.perViewErrors` (shared by both calibrators) now computes and prints each view's
+reprojection RMS and flags the worst one. `MonocularCalibrator.calibrate()` calls it once per camera;
+`StereoCalibrator.calibrate()` now keeps the `rvecs`/`tvecs` from each per-camera `calibrateSingle`
+call (previously discarded) and calls it once for LEFT and once for RIGHT, labelled with the source
+filenames. Points 2-5 (orientation check, adaptive sub-pixel window, held-out validation, distortion
+model options) are not addressed by this change.

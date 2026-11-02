@@ -53,6 +53,25 @@ class CalibrationHelper:
         return K, D, rms, rvecs, tvecs
 
     @staticmethod
+    def perViewErrors(objpoints, imgpoints, rvecs, tvecs, K, D, labels, title):
+        """Per-view reprojection RMS error (px), shared by the monocular and stereo calibrators.
+        Prints every view's error plus the worst one, and returns the list of errors."""
+        errs = []
+        for o, i, r, t in zip(objpoints, imgpoints, rvecs, tvecs):
+            proj, _ = cv2.projectPoints(o, r, t, K, D)
+            errs.append(cv2.norm(i, proj, cv2.NORM_L2) / np.sqrt(len(o)))
+
+        if not errs:
+            return errs
+
+        print(f"[{title}] per-view reprojection errors (px):")
+        for label, err in zip(labels, errs):
+            print(f"  {os.path.basename(label)}: {err:.4f}")
+        worst_idx = int(np.argmax(errs))
+        print(f"[{title}] worst view: {os.path.basename(labels[worst_idx])} ({errs[worst_idx]:.4f} px)")
+        return errs
+
+    @staticmethod
     def deleteLastSaved(dirs, index):
         """Delete the sequence-indexed image file from each dir, if present."""
         name = f"{index:03d}.png"

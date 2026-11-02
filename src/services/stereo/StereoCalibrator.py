@@ -211,14 +211,21 @@ class StereoCalibrator:
                     "Aim for 15-20+ for a stable stereo calibration."
                 )
             # Filter the object points and image points to keep only common pairs
-            objpoints_left, imgpoints_left = self.__filterByCommon(used_left, objpoints_left, imgpoints_left, common)
-            objpoints_right, imgpoints_right = self.__filterByCommon(used_right, objpoints_right, imgpoints_right, common)
+            used_left, objpoints_left, imgpoints_left = self.__filterByCommon(used_left, objpoints_left, imgpoints_left, common)
+            used_right, objpoints_right, imgpoints_right = self.__filterByCommon(used_right, objpoints_right, imgpoints_right, common)
 
             # Calibrate each camera individually
-            K1, D1, rms_left, _, _ = CalibrationHelper.calibrateSingle(
+            K1, D1, rms_left, rvecs_left, tvecs_left = CalibrationHelper.calibrateSingle(
                 objpoints_left, imgpoints_left, img_size_left, "LEFT", self.CALIB_CRITERIA)
-            K2, D2, rms_right, _, _ = CalibrationHelper.calibrateSingle(
+            K2, D2, rms_right, rvecs_right, tvecs_right = CalibrationHelper.calibrateSingle(
                 objpoints_right, imgpoints_right, img_size_right, "RIGHT", self.CALIB_CRITERIA)
+
+            CalibrationHelper.perViewErrors(
+                objpoints_left, imgpoints_left, rvecs_left, tvecs_left, K1, D1, used_left, "LEFT"
+            )
+            CalibrationHelper.perViewErrors(
+                objpoints_right, imgpoints_right, rvecs_right, tvecs_right, K2, D2, used_right, "RIGHT"
+            )
 
             # Perform stereo calibration
             K1, D1, K2, D2, R, T, E, F, rms_stereo = self.__stereoCalibrate(
@@ -251,12 +258,13 @@ class StereoCalibrator:
         return K1, D1, K2, D2, R, T, E, F, rms_stereo
 
     def __filterByCommon(self, paths, objpoints, imgpoints, common):
-        obj_out, img_out = [], []
+        path_out, obj_out, img_out = [], [], []
         for p, o, i in zip(paths, objpoints, imgpoints):
             if os.path.basename(p) in common:
+                path_out.append(p)
                 obj_out.append(o)
                 img_out.append(i)
-        return obj_out, img_out
+        return path_out, obj_out, img_out
 
     def __printCalibrationResults(self, K1, D1, K2, D2, R, T, E, F, rms_left, rms_right, rms_stereo):
         baseline_mm = np.linalg.norm(T)

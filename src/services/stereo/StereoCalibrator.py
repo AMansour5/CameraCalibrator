@@ -9,6 +9,7 @@ from src.services.stereo.StereoCamera import StereoCamera
 from src.helpers.CalibrationHelper import CalibrationHelper
 from src.exceptions.CameraSetupError import CameraSetupError
 from src.exceptions.CameraCalibrationError import CameraCalibrationError
+from src.exceptions.DifferentImageSizeError import DifferentImageSizeError
 
 @implementer(ICalibrator)
 class StereoCalibrator:
@@ -150,6 +151,10 @@ class StereoCalibrator:
             if self._rectify_maps is None or self._maps_source != latest:
                 data = np.load(latest)
                 img_size = (left_frame.shape[1], left_frame.shape[0])
+                if not CalibrationHelper.checkImageSize(img_size, data):
+                    raise DifferentImageSizeError(
+                        f"Captured image size {img_size} does not match calibration size {int(data['img_size'][0]), int(data['img_size'][1])}"
+                    )
                 self._rectify_maps = CalibrationHelper.buildStereoRectifyMaps(
                     data["K1"], data["D1"], data["K2"], data["D2"], data["R"], data["T"], img_size
                 )

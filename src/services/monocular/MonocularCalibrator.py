@@ -9,6 +9,7 @@ from src.helpers.CalibrationHelper import CalibrationHelper
 from src.exceptions.CameraSetupError import CameraSetupError
 from src.services.monocular.MonocularCamera import MonocularCamera
 from src.exceptions.CameraCalibrationError import CameraCalibrationError
+from src.exceptions.DifferentImageSizeError import DifferentImageSizeError
 
 @implementer(ICalibrator)
 class MonocularCalibrator:
@@ -137,6 +138,10 @@ class MonocularCalibrator:
             if self._undistort_maps is None or self._maps_source != latest:
                 data = np.load(latest)
                 img_size = (frame.shape[1], frame.shape[0])
+                if not CalibrationHelper.checkImageSize(img_size, data):
+                    raise DifferentImageSizeError(
+                        f"Captured image size {img_size} does not match calibration size {int(data['img_size'][0]), int(data['img_size'][1])}"
+                    )
                 self._undistort_maps = CalibrationHelper.buildUndistortMaps(data["K"], data["D"], img_size)
                 self._maps_source = latest
 

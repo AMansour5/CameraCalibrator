@@ -1,8 +1,8 @@
 import os
-import shutil
-from datetime import datetime
 import cv2
+import shutil
 import numpy as np
+from datetime import datetime
 
 class CalibrationHelper:
     @staticmethod
@@ -112,4 +112,12 @@ class CalibrationHelper:
         used = [int(f[:-4]) for d in dirs for f in os.listdir(d)
             if f.endswith(".png") and f[:-4].isdigit()]
         return max(used, default=-1) + 1
+
+    @staticmethod
+    def checkImageSize(img_size, data):
+        """Check if the image size matches the calibration data."""
+        calib_size = tuple(int(v) for v in data["img_size"])
+        if calib_size != img_size:
+            return False
+        return True
     

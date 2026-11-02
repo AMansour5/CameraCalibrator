@@ -1,69 +1,93 @@
 # Identified problems
 
-Sixteen problems found by reading every source file and then **running the code**. Each one has its own file with
-the same layout: what the code does (with file and line), how to trigger it, the evidence, the effects, and a suggested fix.
+An earlier audit of this project (read every source file, then ran the code) found 16
+problems. Twelve of them have since been fixed in the codebase — quality-gated, backed-up
+calibration saves; a module entry point and installable package; real, collectible tests;
+raised exceptions instead of printed errors; a non-blocking calibration thread; and more — and
+have been removed from this list. **Four remain**, each with its own file: what the code does
+(with file and line), how to trigger it, the evidence, the effects, and a suggested fix.
 
 Severity:
 
-- **High**: can lose data or silently replace a good calibration with a bad one.
-- **Medium**: misleading or fragile behaviour that appears in normal use, or that makes the project hard to run or trust.
-- **Low**: polish and maintainability.
+- **Medium**: misleading or incomplete behaviour, or something that affects the accuracy of
+  the result, without causing data loss.
+- **Low**: polish, convenience, and portability.
 
 | ID | Problem | Severity | Evidence |
 |----|---------|----------|----------|
-| [P01](P01-image-numbering-overwrites-existing-pairs.md) | New images are numbered by file count and can overwrite existing ones | **High** | Reproduced |
-| [P02](P02-calibration-overwrites-saved-result-without-quality-gate.md) | Calibration always overwrites the saved result: no quality gate, no backup, and `q` triggers it | **High** | Reproduced |
-| [P03](P03-delete-does-not-mark-calibration-dirty.md) | Deleting an image does not mark the calibration out of date | Medium | Reproduced |
-| [P04](P04-preview-ignores-stored-image-size.md) | Preview ignores the stored image size, so a resolution change gives a silently wrong preview | Medium | Reproduced |
-| [P05](P05-camera-open-failure-crashes-on-release.md) | A camera that fails to open ends with a misleading `'NoneType' ... 'release'` error | Medium | Reproduced |
-| [P06](P06-errors-printed-not-raised-exit-code-always-zero.md) | Errors are printed, not raised; the exit code is always 0 | Medium | Reproduced |
-| [P07](P07-shipped-tests-cannot-fail-and-are-not-collected.md) | The shipped tests cannot fail, are not collected by pytest, and one overwrites real data | Medium | Reproduced |
-| [P08](P08-no-dependency-manifest.md) | No dependency list | Medium | Reproduced |
-| [P09](P09-entry-point-requires-module-invocation.md) | Starts only when run as a module from the repository root | Medium | Reproduced |
-| [P10](P10-calibration-file-schema-misleading-and-incomplete.md) | Saved files are incomplete (no `Q`, no provenance) and `R`/`T` mean different things in each file | Medium | File inspection + code |
-| [P11](P11-interface-contracts-not-enforced-or-honoured.md) | Interface contracts are neither honoured nor checked | Medium | Reproduced |
-| [P12](P12-calibration-blocks-the-ui-loop.md) | Calibration runs inside the key handler and freezes the window | Medium | Code structure (duration measured on synthetic data only) |
-| [P13](P13-no-calibration-quality-diagnostics-or-safeguards.md) | No per-image errors, orientation check, or held-out validation; the committed calibration shows warning signs | Medium | Experiment + analysis of the committed file |
-| [P14](P14-live-corner-detection-runs-at-full-resolution-every-frame.md) | Live corner detection runs at full resolution on every frame | Low | Code + relative timing |
-| [P15](P15-tracked-artifacts-and-machine-specific-config.md) | Generated calibration files are tracked in git; config is machine-specific | Low | Repository inspection |
-| [P16](P16-dead-code-copied-code-and-naming.md) | Dead code, leftovers from another project, a misspelled folder | Low | Code search |
+| [P01](P01-stereo-calibration-does-not-save-rectification-outputs.md) | The saved stereo calibration does not include the rectification outputs (`Q`, `R1`, `R2`, `P1`, `P2`) | Medium | Code + file inspection |
+| [P02](P02-no-orientation-check-adaptive-subpixel-window-or-held-out-validation.md) | No checkerboard-orientation check, adaptive sub-pixel window, or held-out validation | Medium | Code reading + experiment |
+| [P03](P03-live-corner-detection-runs-at-full-resolution-every-frame.md) | Live corner detection runs at full resolution on every displayed frame | Low | Code + relative timing |
+| [P04](P04-shipped-camera-config-is-machine-specific.md) | The shipped camera config defaults are specific to one machine | Low | Repository inspection |
 
-## Suggested order of attack
+## What's already been fixed
 
-Four fixes take only a few lines each and remove the most friction or risk:
+For context, the issues that were found and have since been resolved:
 
-1. **P03**: one line in each `deleteLastImage`.
-2. **P05**: guard `release()` with `if self.camera is not None`.
-3. **P08** and **P09**: add `requirements.txt` and `src/__main__.py`.
+- Image numbering derived from the highest existing file name instead of a file count, so
+  deleting a file by hand no longer causes the next save to silently overwrite another image.
+- Calibration results are written to a new time-stamped file under `.../time_stamped/` and
+  never touch the accepted `<mode>_calib.npz` until you press `a` to promote them — no more
+  silent, unconditional overwrite of a good calibration, and no more losing it with no backup.
+- Deleting an image now marks the calibration dirty, the same as saving one.
+- The preview now checks the live frame size against the size stored in the calibration file
+  and raises `DifferentImageSizeError` instead of silently building wrong rectification maps.
+- A camera that fails to open now raises a clear `CameraSetupError`/`RuntimeError`, and
+  `release()` is a no-op when there is no camera to release.
+- Failures are raised (`FileNotFoundError`, `TypeError`, `RuntimeError`,
+  `CameraCalibrationError`, `CameraSetupError`, `DifferentImageSizeError`, `ValueError`)
+  instead of printed and swallowed; an uncaught exception now exits with a non-zero status.
+- The test suite was rewritten as real `test_*.py` pytest files with real assertions; it is
+  collected and can fail.
+- Dependencies are declared in `pyproject.toml` (`pip install -e .`), including version ranges.
+- The project is installable and ships a console script (`calibrate-camera`), so it no longer
+  has to be run as `python -m src...` from the repository root (that still works too).
+- The stereo file now keeps the essential and fundamental matrices (`E`, `F`); the monocular
+  file no longer reuses the misleading `R`/`T` names for per-image board poses — it saves
+  `rvecs`/`tvecs` instead. Both files record `checkerboard` and `square_size_mm`.
+- `ICamera`/`ICalibrator` docstrings now match what the implementations actually do, and
+  `src/tests/test_interfaces.py` runs `zope.interface.verify.verifyClass` against all four
+  implementations.
+- Calibration now runs on a worker thread with a "CALIBRATING..." banner, so the window stays
+  responsive and `q` waits for it to finish instead of freezing.
+- Dead code, an unused constructor argument, a duplicate `Configurator` instantiation, mixed
+  indentation, and the misspelled `matricies` results folder have all been cleaned up; the
+  folder is `src/matrices/` and its `.npz` contents are git-ignored.
 
-Then the ones that protect your data and results: **P01** (numbering), **P02** (quality gate + backup + `q` behaviour),
-**P04** (size check). After that **P06** (raise instead of print) and **P07** (real tests), which make later changes safe.
-**P13** is the one that most affects the *accuracy* of what you produce.
+## How the remaining ones were verified
 
-## How these were verified
+- Read the current source for every component referenced above and in the remaining problem
+  files, and ran the real `StereoCalibrator`/`MonocularCalibrator` where relevant.
+- Loaded a freshly produced time-stamped `.npz` file and compared its keys against the code
+  that builds it and against the suggested schema.
+- Ran the hardware-free part of the test suite (`python -m pytest -q src/tests/test_configurator.py
+  src/tests/test_interfaces.py src/tests/test_calibration_banner.py
+  src/tests/test_calibration_helper.py src/tests/test_timestamped_calibration.py`) and confirmed
+  it passes.
+- Environment: CPython 3.12, OpenCV 4.13.0, NumPy 2.4.4, PyYAML 6.0.3.
 
-- Cloned the repository (commit `ccaebd1`) and read every source file, both `.npz` files, the configs and the tests.
-- Ran the program as shipped (no camera attached) to observe the entry-point and camera-failure behaviour and exit codes.
-- Drove the **real** `StereoCalibrator` with a fake camera that serves synthetic checkerboard frames matching your config
-  (8 x 5 inner corners, 30 mm squares, about 119 mm baseline), in a scratch copy of the repository. This reproduced P01-P04 and P11, and
-  gave the P02 numbers. Frames were rendered at 1920 x 1080 and halved for the slower calibration runs.
-- Tested the code snippets used in the docs and fixes (rectification from the committed file, the per-view error function, the
-  `src/__main__.py` entry point, the hardware-free tests).
-- Environment: CPython 3.12.3, OpenCV 4.13.0, NumPy 2.4.4, PyYAML 6.0.3.
-
-**Not verified:** behaviour on a real camera (driver buffering, `cv2.imshow` windows and key handling, device permissions),
-real photographs of a printed board (synthetic frames are cleaner), and Windows/macOS. Timing figures are from a single-core sandbox and are
-only quoted as relative scale. Where a point rests on code reading only, the problem file says so.
+**Not verified:** behaviour on a real camera beyond what was already open in the sandbox
+(driver buffering, device permissions across different hardware), and Windows/macOS. Timing
+figures are from a single-core sandbox and are only quoted as relative scale.
 
 ## What works well
 
-Worth keeping while fixing the above:
+Worth keeping in mind while working on the above:
 
-- **The calibration core is numerically sound.** On synthetic data with known ground truth, 16 pairs recovered `fx = 532.5` (true 532.5 at half
-  resolution) and a baseline of 119.2 mm (true 119.3 mm) at 0.087 px RMS.
-- **Clean layering.** Loop -> dispatcher -> interface -> implementation. A third camera type is a small addition.
-- **Sound stereo practice.** Intrinsics are solved per camera first and then held fixed (`CALIB_FIX_INTRINSIC`); only pairs detected in *both* views are used;
-  object points are in millimetres so the baseline comes out in real units.
+- **The calibration core is numerically sound.** On synthetic data with known ground truth, 16
+  pairs recovered `fx = 532.5` (true 532.5 at half resolution) and a baseline of 119.2 mm (true
+  119.3 mm) at 0.087 px RMS.
+- **Clean layering.** Loop -> dispatcher -> interface -> implementation. A third camera type is
+  a small addition.
+- **Sound stereo practice.** Intrinsics are solved per camera first and then held fixed
+  (`CALIB_FIX_INTRINSIC`); only pairs detected in *both* views are used; object points are in
+  millimetres so the baseline comes out in real units.
 - **Raw frames are saved**, not the annotated preview, and as lossless PNG.
-- **The camera class checks the resolution the driver actually accepted** and warns when it differs, which prevents a whole class of wrong-split mistakes.
-- **A bad `chosen_calibrator` gives a clear error** (`Unknown calibrator type: ...`), and the camera and windows are released in a `finally` block.
+- **The camera class checks the resolution the driver actually accepted** and warns when it
+  differs, which prevents a whole class of wrong-split mistakes.
+- **The accept/preview workflow is safe by construction**: `calibrate()` can be run as many
+  times as you like without risking the last good result, and `previewFrame()` always shows the
+  latest time-stamped output, accepted or not, so you can judge a calibration before committing
+  to it.
+- **Per-view reprojection errors** make it possible to spot the one bad capture in a set instead
+  of only seeing a single aggregate RMS.

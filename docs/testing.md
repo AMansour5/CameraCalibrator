@@ -1,101 +1,75 @@
 # Testing
 
-## What exists
+The test suite is real `pytest` tests (`test_*.py`, plain `assert` statements), fully
+collected by `pytest`. Nine files, 32 tests in total.
 
-| File | What it does | Camera |
-|------|--------------|--------|
-| `src/tests/StereoCameraTest.py` | Opens the stereo camera, grabs a frame, shows a live feed until `q` | Required |
-| `src/tests/MonocularCameraTest.py` | Same for the monocular camera | Required |
-| `src/tests/StereoCalibratorTest.py` | Runs a real calibration on the saved images (only `test_calibrate_method` is enabled in `__main__`) | Opened by the constructor; with none attached it prints an error and carries on, so saved images are what is really needed |
-| `src/tests/MonocularCalibratorTest.py` | Constructs the calibrator, grabs a frame, runs a real calibration | Same as above (`test_initialization` does assert the camera opened) |
-| `src/tests/DispatcherTest.py` | Builds the configured calibrator and checks it is not `None` | Opened as a side effect; the test still passes without one |
-| `src/tests/ConfiguratorTest.py` | Loads configs | No |
-| `src/tests/test_configurator_set_config.py` | Pytest-collectible regression test for `Configurator.setConfig` (file creation + key-preserving merge), using a temporary project root | No |
-| `src/tests/test_timestamped_calibration.py` | Pytest tests for time-stamped saves, accept (`a`) and preview source | No |
+## Hardware-free (no camera needed)
 
-Run any of them from the repository root as a module, for example:
+These never open a camera and are safe to run at any time, including in CI:
+
+| File | What it covers |
+|------|--------------------------------------------------------------------------------|
+| `test_configurator.py` | Loading real config files, and `setConfig`'s create/merge behaviour against a temporary project root |
+| `test_interfaces.py` | `zope.interface.verify.verifyClass` for `ICamera` and `ICalibrator` against all four implementations |
+| `test_calibration_banner.py` | `CameraCalibrator.drawCalibrationBanner` does not mutate its input frame |
+| `test_calibration_helper.py` | `CalibrationHelper.perViewErrors` flags the worst of several synthetic views |
+| `test_timestamped_calibration.py` | Time-stamped saves never overwrite, `acceptLatest`/`previewFrame` pick the newest file, using a monkeypatched camera and a temporary project root (see below for the pattern) |
+
+Run just these:
 
 ```bash
-python -m src.tests.StereoCameraTest
+python -m pytest -q src/tests/test_configurator.py src/tests/test_interfaces.py \
+    src/tests/test_calibration_banner.py src/tests/test_calibration_helper.py \
+    src/tests/test_timestamped_calibration.py
 ```
 
-## Limits you should know about
+## Hardware-dependent (need a real camera)
 
-These are scripts you run and look at, not an automated suite:
+These construct a real `StereoCamera`/`MonocularCamera`/`StereoCalibrator`/
+`MonocularCalibrator`, which opens the device configured in `config/stereo_camera.yaml` /
+`config/monocular_camera.yaml` in `__init__`. Without a camera at that index they fail fast
+with `CameraSetupError`; `test_*_view_feed` opens a window and blocks on `q`.
 
-- `pytest` collects **0 tests** from the `*Test.py` files (they are not named `test_*.py`, and
-  `ConfiguratorTest` has an `__init__`). `src/tests/test_configurator_set_config.py` is the
-  exception: it follows the `test_*.py` convention, so `pytest` does collect and run it.
-- `ConfiguratorTest` refers to `Configurator.CAMERA` and the key `cam_index`, neither of
-  which exists, and wraps everything in `try/except`, so it prints the error and still
-  reports "All tests completed." with exit code 0.
-- In the calibrator tests, the calls wrapped in `try/except ... assert False` (`calibrate()`,
-  `grabPreviewFrame()`) already catch every exception internally, so those `assert False`
-  branches can never run. `test_calibrate_method` also **overwrites your saved calibration**.
+| File | What it does |
+|------|--------------|
+| `test_stereocamera.py` | Opens the stereo camera, grabs a frame, shows a live feed until `q` |
+| `test_monocularcamera.py` | Same for the monocular camera |
+| `test_stereocalibrator.py` | Builds a real `StereoCalibrator`, grabs a preview frame, and runs a real calibration on whatever is in `src/images/stereo/` |
+| `test_monocularcalibrator.py` | Same for `MonocularCalibrator` |
+| `test_dispatcher.py` | Builds whichever calibrator `config/calibrator.yaml` selects (opens its camera as a side effect) |
 
-Details and fixes: [P07](problems/P07-shipped-tests-cannot-fail-and-are-not-collected.md).
+`test_calibrate_method` in the calibrator tests calls the real `calibrate()`. Because
+calibration now writes to `.../time_stamped/` and never touches the accepted
+`<mode>_calib.npz` directly, running it does **not** overwrite your last accepted result —
+worst case it adds an extra time-stamped file.
 
-## Hardware-free tests that work today
+Running the whole suite without a camera attached will hang or fail on these five files; run
+only the hardware-free selection above if you don't have one, or pass `-k` to skip them, for
+example:
 
-These need no camera and run under `pytest` (save as `src/tests/test_hardware_free.py`
-and run `python -m pytest -q src/tests/test_hardware_free.py` from the repository root; they pass):
+```bash
+python -m pytest -q src/tests -k "not camera and not calibrator and not dispatcher"
+```
+
+## Testing the calibrators without a camera
+
+`test_timestamped_calibration.py` shows the pattern used to exercise a calibrator with no
+hardware: monkeypatch the camera's `open`/`getFrames` and point `Configurator.getProjectRoot`
+at a temporary directory so nothing touches your real `src/images/`/`src/matrices/`:
 
 ```python
-import numpy as np
-from src.helpers.CalibrationHelper import CalibrationHelper
-from src.services.stereo.StereoCamera import StereoCamera
-from src.utils.Configurator import Configurator
-
-
-class FakeCapture:
-    """Stands in for cv2.VideoCapture."""
-    def __init__(self, frame):
-        self.frame = frame
-
-    def read(self):
-        return True, self.frame
-
-    def release(self):
-        pass
-
-
-def test_stereo_camera_splits_the_frame_in_half():
-    cam = StereoCamera({"camera_index": 0})
-    frame = np.zeros((10, 8, 3), np.uint8)
-    frame[:, 4:] = 255                              # right half is white
-    cam._StereoCamera__capture = FakeCapture(frame)  # name-mangled private attribute
-    left, right = cam.getFrames()
-    assert left.shape == right.shape == (10, 4, 3)
-    assert left.max() == 0 and right.min() == 255
-
-
-def test_object_points_are_in_millimetres():
-    objp = CalibrationHelper.buildObjectPoints((8, 5), 30)
-    assert objp.shape == (40, 3)
-    assert objp[1, 0] == 30      # next corner along a row is one square away
-    assert objp[8, 1] == 30      # first corner of the next row
-    assert (objp[:, 2] == 0).all()
-
-
-def test_checkerboard_config_has_required_keys():
-    cfg = Configurator().fetchData(Configurator.CHECKERBOARD)
-    assert {"columns", "rows", "square_size_mm"} <= set(cfg)
+def _make_calibrator(tmp_path, monkeypatch):
+    monkeypatch.setattr(MonocularCamera, "open", lambda self: None)
+    monkeypatch.setattr(MonocularCamera, "getFrames", lambda self: np.zeros((20, 20, 3), np.uint8))
+    monkeypatch.setattr(Configurator, "getProjectRoot", lambda: str(tmp_path))
+    monkeypatch.setattr(
+        Configurator, "fetchData",
+        lambda self, name: {"columns": 8, "rows": 5} if name == Configurator.CHECKERBOARD else {},
+    )
+    return MonocularCalibrator()
 ```
 
-## Testing the calibrator without a camera
-
-Replace the camera methods and feed synthetic checkerboard frames. This is how the problems
-in [docs/problems](problems/README.md) were reproduced:
-
-```python
-from src.services.stereo.StereoCamera import StereoCamera
-current = {"pair": (left_img, right_img)}              # numpy images you generate
-StereoCamera.open = lambda self: None
-StereoCamera.getFrames = lambda self: current["pair"]
-```
-
-Then construct `StereoCalibrator()`, call `saveImage((left, right))` for several rendered
-poses, and call `calibrate()`. Two cautions: the calibrator writes to the real
-`src/images/` and `src/matrices/` folders (point `Configurator.getProjectRoot` at a
-temporary copy of the project to avoid clobbering your data), and calibration at full
-1080p resolution is slow, so reduce the frame size for logic tests.
+From there, call `saveImage(frame)` for several rendered poses and `calibrate()` as usual.
+Calibrating at full 1080p resolution is slow, so keep synthetic frames small for logic tests
+(the frames above are 20x20, enough to exercise the save/accept/preview plumbing without
+running real corner detection).

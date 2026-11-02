@@ -17,14 +17,19 @@ the good frames, runs the calibration on demand, and can preview the result
 
 ## Requirements
 
-- Python 3.8+ (exercised on 3.12.3)
+- Python 3.9+ (exercised on 3.12.3)
 - A camera reachable by OpenCV (`/dev/videoN` on Linux; an integer index also works)
 - A printed checkerboard on a **rigid, flat** surface
-- Python packages (there is no `requirements.txt` yet, see [problem P08](docs/problems/P08-no-dependency-manifest.md)):
+
+Dependencies are declared in `pyproject.toml`. From the repository root:
 
 ```bash
-pip install opencv-python numpy pyyaml zope.interface
+pip install -e .
 ```
+
+This installs `opencv-python`, `numpy`, `PyYAML` and `zope.interface` (pinned to the ranges
+in `pyproject.toml`) and registers a `calibrate-camera` console script. Add `pip install -e
+".[dev]"` instead if you also want `pytest`.
 
 Last verified with OpenCV 4.13.0, NumPy 2.4.4, PyYAML 6.0.3.
 
@@ -37,10 +42,11 @@ Last verified with OpenCV 4.13.0, NumPy 2.4.4, PyYAML 6.0.3.
    For a stereo camera, `combined_width` x `combined_height` is the size of the *whole*
    side-by-side frame, not one eye.
 3. **Pick the mode** in `config/calibrator.yaml`: `chosen_calibrator: stereo` or `monocular`.
-4. **Run from the repository root** (it must be run as a module, see
-   [problem P09](docs/problems/P09-entry-point-requires-module-invocation.md)):
+4. **Run it:**
 
 ```bash
+calibrate-camera                        # after `pip install -e .`
+# or, from the repository root, without installing:
 python -m src.services.CameraCalibrator
 ```
 
@@ -52,11 +58,12 @@ python -m src.services.CameraCalibrator
 | Key | Capture mode | Preview mode |
 |-----|--------------|--------------|
 | `s` | Save the current frame/pair (only when the board is detected, in **both** halves for stereo) | - |
-| `c` | Run the calibration on all saved images and write the result file | - |
+| `c` | Run the calibration in the background and write a new time-stamped result file | - |
+| `a` | Accept the latest time-stamped result as the final calibration | Same |
 | `x` | Delete the most recently numbered saved image/pair | - |
-| `p` | Switch to preview of the saved calibration | - |
+| `p` | Switch to preview of the latest time-stamped calibration (accepted or not) | - |
 | `r` | - | Return to capture mode |
-| `q` | Quit. **If images were saved since the last calibration, this first runs a calibration** (see [P02](docs/problems/P02-calibration-overwrites-saved-result-without-quality-gate.md)) | Same |
+| `q` | Quit. If images were saved or deleted since the last calibration, this first runs a calibration (as a new time-stamped file; the accepted result is untouched) and quits once it finishes | Same |
 
 ## What gets written
 
@@ -64,22 +71,24 @@ python -m src.services.CameraCalibrator
 |------|---------|
 | `src/images/stereo/left/NNN.png`, `src/images/stereo/right/NNN.png` | Saved stereo pairs (same file name in both folders) |
 | `src/images/monocular/NNN.png` | Saved monocular frames |
-| `src/matrices/stereo/stereo_calib.npz` | Stereo calibration result |
-| `src/matrices/monocular/monocular_calib.npz` | Monocular calibration result |
-| `src/matrices/<mode>/time_stamped/*.npz` | Every calibration run; `a` copies the latest to the final file above |
+| `src/matrices/<mode>/time_stamped/<mode>_calib_YYYYMMDD_HHMMSS.npz` | Every calibration run; never overwritten |
+| `src/matrices/stereo/stereo_calib.npz` | Accepted stereo calibration result (written only by pressing `a`) |
+| `src/matrices/monocular/monocular_calib.npz` | Accepted monocular calibration result (written only by pressing `a`) |
 
-Image folders are created automatically and `*.png` / `*.jpg` are git-ignored. The
-`.npz` files are also git-ignored (`src/matrices/**/*.npz`, see
-[P15](docs/problems/P15-tracked-artifacts-and-machine-specific-config.md)).
-File contents are documented in [docs/calibration-output.md](docs/calibration-output.md).
+Image folders are created automatically and `*.png` / `*.jpg` are git-ignored, as are all
+`.npz` files (`*.npz` in `.gitignore`). File contents are documented in
+[docs/calibration-output.md](docs/calibration-output.md).
 
 ## Reading the result
 
-The tool prints the RMS reprojection error in pixels. Rule of thumb used by the code:
-above **1.0 px** it prints a warning. Lower is better; well under 0.5 px is a good
-result. A low RMS alone does not prove the calibration is right, so also check the
-preview (`p`): in the stereo preview, the same physical point should sit at the same
-row in the left and right images.
+The tool prints the RMS reprojection error in pixels, both overall and per captured view (so
+a single bad capture doesn't hide inside a good average). Rule of thumb used by the code:
+above **1.0 px** (configurable via `max_rms` in `config/calibrator.yaml`) it prints a warning,
+but still saves the result as a time-stamped file for you to inspect — it only becomes the
+accepted calibration once you press `a`. Lower is better; well under 0.5 px is a good result.
+A low RMS alone does not prove the calibration is right, so also check the preview (`p`): in
+the stereo preview, the same physical point should sit at the same row in the left and right
+images.
 
 ## Project layout
 
@@ -87,14 +96,15 @@ row in the left and right images.
 config/                    YAML settings (calibrator, checkerboard, cameras)
 src/
   services/
-    CameraCalibrator.py    Entry point + interactive loop (keys, windows)
+    CameraCalibrator.py    Entry point + interactive loop (keys, windows, background calibration)
     stereo/                StereoCamera (frame splitting) + StereoCalibrator
     monocular/             MonocularCamera + MonocularCalibrator
   interfaces/              ICamera, ICalibrator (zope.interface contracts)
   helpers/                 CalibrationHelper (OpenCV wrappers shared by both modes)
   utils/                   Configurator (YAML access), Dispatcher (picks the calibrator)
-  matrices/                Calibration results
-  tests/                   Hardware-dependent scripts (see docs/testing.md)
+  exceptions/              CameraSetupError, CameraCalibrationError, DifferentImageSizeError
+  matrices/                Calibration results (accepted + time-stamped history)
+  tests/                   pytest test_*.py files (see docs/testing.md for which need a camera)
 ```
 
 ## Documentation
@@ -106,7 +116,7 @@ src/
 | [docs/architecture.md](docs/architecture.md) | How the pieces fit together and the main loop |
 | [docs/calibration-output.md](docs/calibration-output.md) | `.npz` contents and how to use them (rectification, depth) |
 | [docs/api-reference.md](docs/api-reference.md) | Classes and methods |
-| [docs/testing.md](docs/testing.md) | The shipped tests, their limits, and a hardware-free way to test |
-| [docs/problems/](docs/problems/README.md) | 16 identified problems, each with evidence, effects and a fix |
+| [docs/testing.md](docs/testing.md) | The test suite, which files need a camera, and a hardware-free way to test |
+| [docs/problems/](docs/problems/README.md) | Remaining known issues, each with evidence, effects and a fix |
 
-*Documentation written against commit `ccaebd1`.*
+*Documentation written against commit `1b7f96b`.*

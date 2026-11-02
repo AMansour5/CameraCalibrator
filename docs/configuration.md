@@ -8,6 +8,8 @@ calibrator is created, so restart the program after editing.
 | Key | Values | Meaning |
 |-----|--------|---------|
 | `chosen_calibrator` | `stereo` or `monocular` | Which calibrator the dispatcher builds. Anything else raises `ValueError: Unknown calibrator type: ...` |
+| `min_images` | integer, default `10` | Minimum number of captured images before `calibrate()` will run. **Enforced for monocular** (raises if fewer are on disk); stereo only prints a warning below 10 *usable* pairs regardless of this value |
+| `max_rms` | float (px), default `1.0` | Threshold above which the console prints a "high RMS" note after calibrating. This is informational only — the result is still saved either way; see [P02](problems/P02-no-orientation-check-adaptive-subpixel-window-or-held-out-validation.md) |
 
 ## `config/checkerboard.yaml` (shared by both modes)
 
@@ -21,7 +23,7 @@ Shipped values: `columns: 8`, `rows: 5`, `square_size_mm: 30` (a 9 x 6 squares b
 
 Notes:
 - Count inner corners, not squares.
-- One even and one odd count gives an unambiguous orientation; two even or two odd does not ([P13](problems/P13-no-calibration-quality-diagnostics-or-safeguards.md)).
+- One even and one odd count gives an unambiguous orientation; two even or two odd does not ([P02](problems/P02-no-orientation-check-adaptive-subpixel-window-or-held-out-validation.md)).
 - If you change these after capturing images, the saved images no longer match the
   settings; recapture or restore the old values before calibrating.
 
@@ -54,7 +56,8 @@ Shipped values: `/dev/video0`, `1280 x 720`, preview `640`.
 ## Gotchas
 
 - Device paths like `/dev/video2` are Linux-specific and can change when USB devices are
-  re-plugged or the machine reboots ([P15](problems/P15-tracked-artifacts-and-machine-specific-config.md)). On Windows/macOS use an integer index.
-- A missing or unreadable config file does not stop the program immediately; it prints an
-  error and a later line fails with a confusing `NoneType` message ([P06](problems/P06-errors-printed-not-raised-exit-code-always-zero.md)).
+  re-plugged or the machine reboots ([P04](problems/P04-shipped-camera-config-is-machine-specific.md)). On Windows/macOS use an integer index.
+- A missing or unreadable config file now raises (`FileNotFoundError`, `RuntimeError`, or
+  `TypeError`) instead of printing a message and returning `None`, so the program fails
+  immediately with a clear cause rather than later with a confusing symptom.
 - The values are not validated (no range or type checks).

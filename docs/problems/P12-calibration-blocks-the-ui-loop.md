@@ -30,3 +30,8 @@ That the window is unresponsive for the whole time follows directly from the cod
 Minimum: draw a "Calibrating..." banner and call `cv2.waitKey(1)` once before the call, print progress per stage, and
 read-and-discard a few frames afterwards. Better: run `calibrate()` on a worker thread (keep all
 `imshow`/`waitKey` on the main thread) and show a status line until it finishes.
+
+## Resolution
+
+`calibrate()` now runs on a worker thread; the main loop keeps displaying live frames with a red "CALIBRATING..." banner
+and ignores editing keys until it finishes. `q` waits for the worker, then exits.

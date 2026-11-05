@@ -35,7 +35,7 @@ adding a third camera type means adding a calibrator + camera class and one bran
 | `StereoCalibrator` / `MonocularCalibrator` | Detect the board for live feedback, save images, run the calibration, save a new time-stamped `.npz`, promote it to the final file on `acceptLatest()`, build preview maps |
 | `CalibrationHelper` | Stateless helpers: object points, corner detection + sub-pixel refinement, `calibrateCamera`, per-view reprojection errors, delete-by-index, next-free-index lookup, time-stamped save/accept, image-size check, undistort / stereo-rectify maps |
 | `Configurator` | Loads (and can update) the YAML files in `config/`; finds the project root by walking up until it sees both `config/` and `src/`; raises on a missing/invalid file instead of printing and returning `None` |
-| `src.exceptions` | `CameraSetupError`, `CameraCalibrationError`, `DifferentImageSizeError` — raised instead of printed, so the entry point can report a real failure and exit non-zero |
+| `src.exceptions` | `CameraSetupError`, `CameraCalibrationError`, `DifferentImageSizeError`, `FewImagesError` — raised instead of printed, so the entry point can report a real failure and exit non-zero |
 
 ## Startup sequence (stereo)
 
@@ -77,7 +77,7 @@ successful `calibrate()` call.
 2. For each image: grayscale -> `findChessboardCorners` (default flags) -> `cornerSubPix`
    (11x11 half-window, 100 iterations / 1e-5).
 3. Check left and right image sizes are equal.
-4. Keep only file names that were detected in **both** views. Warn if fewer than 10.
+4. Keep only file names that were detected in **both** views. Raises `FewImagesError` if fewer than 10.
 5. `calibrateCamera` on each eye separately -> `K1, D1` (+ `rvecs`/`tvecs`) and `K2, D2`
    (default flags: full 5-coefficient model, focal lengths and principal point free).
 6. `CalibrationHelper.perViewErrors` once per camera: prints every view's reprojection RMS and

@@ -39,6 +39,7 @@ Constants: `CHECKERBOARD`, `STEREO_CAMERA`, `MONOCULAR_CAMERA`, `CALIBRATOR`.
 | `CameraSetupError` | `StereoCalibrator`/`MonocularCalibrator.__setupCamera` when the camera can't be opened or won't deliver an initial frame |
 | `CameraCalibrationError` | `StereoCalibrator`/`MonocularCalibrator.calibrate` when anything in the calibration pipeline fails (not enough images, mismatched sets, an OpenCV error, ...) |
 | `DifferentImageSizeError` | `previewFrame()` when the live frame size doesn't match the size stored in the calibration file |
+| `FewImagesError` | `StereoCalibrator`/`MonocularCalibrator.calibrate` when the number of images on disk is fewer than `min_images`|
 
 ## `src.interfaces`
 
@@ -86,9 +87,8 @@ Notable behaviour:
   than a plain count, so deleting a file by hand does not cause the next save to collide with
   one that still exists.
 - `calibrate()` raises `CameraCalibrationError` on failure instead of printing and returning.
-- Monocular refuses to calibrate below `min_images` captured images or 5 *usable* ones
-  (raises `RuntimeError`, wrapped as `CameraCalibrationError`). Stereo only prints a warning
-  below 10 usable pairs (its `min_images` constructor argument is accepted but not enforced).
+- Both refuses to calibrate below `min_images` captured images
+  (raises `FewImagesError`, wrapped as `CameraCalibrationError`).
 - Constructing either class opens the camera; a failure raises `CameraSetupError`.
 
 ## `CalibrationHelper` (all static)

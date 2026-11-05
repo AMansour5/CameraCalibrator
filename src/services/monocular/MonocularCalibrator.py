@@ -5,6 +5,7 @@ import numpy as np
 from zope.interface import implementer
 from src.utils.Configurator import Configurator
 from src.interfaces.ICalibrator import ICalibrator
+from src.exceptions.FewImagesError import FewImagesError
 from src.helpers.CalibrationHelper import CalibrationHelper
 from src.exceptions.CameraSetupError import CameraSetupError
 from src.services.monocular.MonocularCamera import MonocularCamera
@@ -165,7 +166,7 @@ class MonocularCalibrator:
             if len(image_paths) == 0:
                 raise RuntimeError("No images found for calibration. Capture images first.")
             elif len(image_paths) < self.min_images:
-                raise RuntimeError(
+                raise FewImagesError(
                     f"Not enough images for calibration. Found {len(image_paths)}, but minimum required is {self.min_images}."
                 )
 

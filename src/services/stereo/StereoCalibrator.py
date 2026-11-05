@@ -5,6 +5,7 @@ import numpy as np
 from zope.interface import implementer
 from src.utils.Configurator import Configurator
 from src.interfaces.ICalibrator import ICalibrator
+from src.exceptions.FewImagesError import FewImagesError
 from src.services.stereo.StereoCamera import StereoCamera
 from src.helpers.CalibrationHelper import CalibrationHelper
 from src.exceptions.CameraSetupError import CameraSetupError
@@ -185,6 +186,10 @@ class StereoCalibrator:
                 raise RuntimeError(
                     f"Mismatched or empty capture sets: {len(left_paths)} left, "
                     f"{len(right_paths)} right. Filenames must correspond 1:1."
+                )
+            elif len(left_paths) < self.min_images or len(right_paths) < self.min_images:
+                raise FewImagesError(
+                    f"Not enough images for calibration: {len(left_paths)} left, {len(right_paths)} right. Minimum required is {self.min_images}."
                 )
             print(f"Found {len(left_paths)} candidate pairs.\n")
             print("Detecting corners - LEFT camera")

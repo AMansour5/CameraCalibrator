@@ -8,7 +8,7 @@ calibrator is created, so restart the program after editing.
 | Key | Values | Meaning |
 |-----|--------|---------|
 | `chosen_calibrator` | `stereo` or `monocular` | Which calibrator the dispatcher builds. Anything else raises `ValueError: Unknown calibrator type: ...` |
-| `min_images` | integer, default `10` | Minimum number of captured images before `calibrate()` will run. **Enforced for monocular** (raises if fewer are on disk); stereo only prints a warning below 10 *usable* pairs regardless of this value |
+| `min_images` | integer, default `10` | Minimum number of captured images before `calibrate()` will run. raises `FewImagesError` if the number of images on disk is fewer than `min_images` |
 | `max_rms` | float (px), default `1.0` | Threshold above which the console prints a "high RMS" note after calibrating. This is informational only — the result is still saved either way; see [P02](problems/P02-no-orientation-check-adaptive-subpixel-window-or-held-out-validation.md) |
 
 ## `config/checkerboard.yaml` (shared by both modes)

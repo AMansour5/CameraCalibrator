@@ -102,7 +102,7 @@ src/
   interfaces/              ICamera, ICalibrator (zope.interface contracts)
   helpers/                 CalibrationHelper (OpenCV wrappers shared by both modes)
   utils/                   Configurator (YAML access), Dispatcher (picks the calibrator)
-  exceptions/              CameraSetupError, CameraCalibrationError, DifferentImageSizeError
+  exceptions/              CameraSetupError, CameraCalibrationError, DifferentImageSizeError, FewImagesError
   matrices/                Calibration results (accepted + time-stamped history)
   tests/                   pytest test_*.py files (see docs/testing.md for which need a camera)
 ```
@@ -118,5 +118,4 @@ src/
 | [docs/api-reference.md](docs/api-reference.md) | Classes and methods |
 | [docs/testing.md](docs/testing.md) | The test suite, which files need a camera, and a hardware-free way to test |
 | [docs/problems/](docs/problems/README.md) | Remaining known issues, each with evidence, effects and a fix |
-
-*Documentation written against commit `1b7f96b`.*
+| [docs/Camera_Calibration.pdf](docs/Camera_Calibration.pdf) | Camera calibration study notes |

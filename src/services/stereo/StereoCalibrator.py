@@ -283,9 +283,9 @@ class StereoCalibrator:
         print(f"Essential matrix (E):\n{E}")
         print(f"Fundamental matrix (F):\n{F}")
 
-        if rms_stereo > 1.0:
+        if rms_stereo > self.max_rms:
             print(
-                "\nNOTE: stereo RMS > 1.0 px is high. Common causes: not enough "
+                f"\nNOTE: stereo RMS > {self.max_rms} px is high. Common causes: not enough "
                 "coverage of frame edges, checkerboard not rigid/flat, motion blur "
                 "during capture, or SQUARE_SIZE_MM not matching your real board. "
                 "Consider recapturing before moving on to rectification."
